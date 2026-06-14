@@ -25,6 +25,11 @@ jobs:
 
     - run: gradle assembleRelease
 
+    - name: Collect APKs into unified directory
+      run: |
+        mkdir -p app/build/outputs/apk/release
+        find app/build/outputs/apk -path '*/release/*.apk' -exec cp {} app/build/outputs/apk/release/ \;
+
     - name: Sign app APK
       id: sign_app
       uses: ilharp/sign-android-release@nightly
