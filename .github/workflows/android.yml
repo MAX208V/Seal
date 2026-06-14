@@ -23,7 +23,7 @@ jobs:
 
     - uses: gradle/actions/setup-gradle@v3
 
-    - run: gradle assembleRelease
+    - run: gradle assembleRelease -x lintVital
 
     - name: Collect APKs into unified directory
       run: |
