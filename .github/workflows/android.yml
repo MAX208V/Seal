@@ -1,10 +1,9 @@
-name: Build Release APK
+name: Build Release APK (multi-abi)
 
 on:
   workflow_dispatch:
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
 
@@ -23,17 +22,18 @@ jobs:
 
     - uses: gradle/actions/setup-gradle@v3
 
-    - run: gradle assembleRelease -x lint
+    # 修复1：不再用 -x lint，不再用 -x 任何东西
+    - run: gradle assembleRelease
 
-    - name: Collect APKs into unified directory
-      run: |
-        mkdir -p app/build/outputs/apk/release
-        find app/build/outputs/apk -path '*/release/*.apk' -exec cp {} app/build/outputs/apk/release/ \;
+    # （可选）如果你确认多架构 APK 都在 apk/release/，这一步其实可以省略
+    - name: List APKs (debug)
+      run: find app/build/outputs/apk -name '*.apk' || true
 
     - name: Sign app APK
       id: sign_app
       uses: ilharp/sign-android-release@nightly
       with:
+        # 修复2：splits 输出都在 apk/release/，所以 releaseDir 指向这里
         releaseDir: app/build/outputs/apk/release
         signingKey: ${{ secrets.SIGNING_KEY }}
         keyAlias: ${{ secrets.ALIAS }}
@@ -44,6 +44,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: signed-apks
-        path: app/build/outputs/apk/release/*-arm64-v8a-release-signed.apk
+        # 修复3：上传所有已签名 APK，不再只写 *-arm64-v8a-release-signed.apk
+        path: app/build/outputs/apk/release/*-release-signed.apk
         if-no-files-found: error
         retention-days: 20
