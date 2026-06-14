@@ -23,16 +23,18 @@ jobs:
 
     - uses: gradle/actions/setup-gradle@v3
 
-    # 修复1：移除 -x lint，不再掩盖代码问题
-    # 修复2：仅构建 arm64-v8a 架构，节省 50% 以上构建时间
-    - run: gradle assembleArm64-v8aRelease
+    - run: gradle assembleRelease -x lint
+
+    - name: Collect APKs into unified directory
+      run: |
+        mkdir -p app/build/outputs/apk/release
+        find app/build/outputs/apk -path '*/release/*.apk' -exec cp {} app/build/outputs/apk/release/ \;
 
     - name: Sign app APK
       id: sign_app
       uses: ilharp/sign-android-release@nightly
       with:
-        # 修复3：精确指向该架构的输出目录，签名插件100%能找到APK
-        releaseDir: app/build/outputs/apk/arm64-v8a/release
+        releaseDir: app/build/outputs/apk/release
         signingKey: ${{ secrets.SIGNING_KEY }}
         keyAlias: ${{ secrets.ALIAS }}
         keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
@@ -42,6 +44,6 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: signed-apks
-        path: app/build/outputs/apk/arm64-v8a/release/*-arm64-v8a-release-signed.apk
+        path: app/build/outputs/apk/release/*-arm64-v8a-release-signed.apk
         if-no-files-found: error
         retention-days: 20
